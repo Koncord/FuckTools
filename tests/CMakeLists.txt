@@ -1,5 +1,5 @@
 add_custom_target(test_fuckc
-        COMMAND fuckc hello.bf hello.bfc
+        COMMAND fuckc hello.bf hello.bfc motherfucker
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests"
         DEPENDS "fuckc"
         )
@@ -11,7 +11,7 @@ add_custom_target(test_fuckmachine
         )
 
 add_custom_target(test_fuckcc
-        COMMAND fuckcc hello.bfc motherfucker
+        COMMAND fuckcc hello.bfc
         COMMAND ${CMAKE_C_COMPILER} hello.c -o hello
         COMMAND "${CMAKE_SOURCE_DIR}/tests/hello"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests"
@@ -24,7 +24,7 @@ add_custom_target(test_fuckcc
 
 
 add_custom_target(test_mandelbrot_fuckc
-        COMMAND fuckc mandelbrot.bf mandelbrot.bfc
+        COMMAND fuckc mandelbrot.bf mandelbrot.bfc motherfucker
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests"
         DEPENDS "fuckc"
         )
