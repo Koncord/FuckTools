@@ -11,6 +11,46 @@
 #include <algorithm>
 #include <map>
 
+struct ciChar_traits : public std::char_traits<char> {
+    static bool eq(char c1, char c2)
+    {
+        return std::toupper(c1) == std::toupper(c2);
+    }
+
+    static bool ne(char c1, char c2)
+    {
+        return std::toupper(c1) != std::toupper(c2);
+    }
+
+    static bool lt(char c1, char c2)
+    {
+        return std::toupper(c1) < std::toupper(c2);
+    }
+
+    static int compare(const char *s1, const char *s2, size_t n)
+    {
+        while (n-- != 0)
+        {
+            if (std::toupper(*s1) < std::toupper(*s2)) return -1;
+            if (std::toupper(*s1) > std::toupper(*s2)) return 1;
+            ++s1;
+            ++s2;
+        }
+        return 0;
+    }
+
+    static const char *find(const char *s, int n, char a)
+    {
+        while (n-- > 0 && std::toupper(*s) != std::toupper(a))
+        {
+            ++s;
+        }
+        return s;
+    }
+};
+
+typedef std::basic_string<char, ciChar_traits> ciString;
+
 class FuckTranslator
 {
 public:
@@ -506,10 +546,9 @@ int main(int argc, char **argv)
 
     FuckOptimizer::OptLevel optLevel = FuckOptimizer::OptLevel::none;
 
-    if(argc >= 3)
+    if(argc >= 4)
     {
-        std::string optLevelStr = "none";
-        optLevelStr = argv[2];
+        ciString optLevelStr = argv[3];
 
         if (optLevelStr == "basic")
             optLevel = FuckOptimizer::OptLevel::basic;
@@ -517,7 +556,7 @@ int main(int argc, char **argv)
             optLevel = FuckOptimizer::OptLevel::kidLevel;
         else if (optLevelStr == "aggressive")
             optLevel = FuckOptimizer::OptLevel::aggressive;
-        else if (optLevelStr == "matherfucker")
+        else if (optLevelStr == "motherfucker")
             optLevel = FuckOptimizer::OptLevel::motherfucker;
     }
 
