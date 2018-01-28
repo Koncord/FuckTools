@@ -1,6 +1,6 @@
 Fuck Compiler
 =============
-Is an optimizer compler to special IR code
+Is an optimizing compiler to special IR code for FuckMachine and BFCC
 
 usage
 -----
