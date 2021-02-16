@@ -55,7 +55,7 @@ public:
 
     void calcLoops();
 
-
+    void incToSet();
 private:
     std::vector<Instruction> &code;
 };

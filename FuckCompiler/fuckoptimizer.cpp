@@ -40,6 +40,7 @@ void FuckOptimizer::compile(FuckOptimizer::OptLevel opt) {
         contract(); // contract series of >> or +++ to 1 command
     }
     if (opt >= OptLevel::kidLevel) {
+        incToSet(); // change INC to SET where it's possible
         memZero(); // [+] and [-]
         scanMem(); // [>] and [<]
     }
@@ -57,8 +58,10 @@ void FuckOptimizer::compile(FuckOptimizer::OptLevel opt) {
 
 void FuckOptimizer::setAndInc() {
     for (auto it = code.begin(); it != code.end();) {
+        // look for INC opcode that is not first
         if (it->fn == Instruction::VMOpcode::inc && it != code.begin()) {
             auto prev = it - 1;
+            // if the previous opcode was SET with the same offset, shrink it
             if (prev->fn == Instruction::VMOpcode::set && prev->arg.half.offset == it->arg.half.offset) {
                 prev->arg.full = it->arg.full;
                 it = code.erase(it);
@@ -175,8 +178,7 @@ void FuckOptimizer::useOffsets() {
     int i = 0;
 }
 
-void FuckOptimizer::scanMem()
-{
+void FuckOptimizer::scanMem() {
     // TODO: FIX CRASH ON hello.bf
     for (auto it = code.begin(); it != code.end(); ++it) {
         auto sz = ((it - code.begin()) + 3);
@@ -344,5 +346,33 @@ void FuckOptimizer::calcLoops() {
                 }
             }
         }
+    }
+}
+
+void FuckOptimizer::incToSet() {
+    for (auto it = code.begin(); it != code.end(); ++it) {
+        if (it->fn != Instruction::VMOpcode::inc)
+            continue;
+        bool canChange = true;
+        auto it2 = code.begin();
+        // TODO: look for previous operations that emmit current offset
+        for (; it2 != it; ++it2) {
+            if (it->arg.half.offset == it2->arg.half.offset) {
+                canChange = false;
+                break;
+            }
+        }
+        if (!canChange)
+            continue;
+
+        it->fn = Instruction::VMOpcode::set;
+        // no any changes of this offset
+        if (it2 == it) {
+            continue;
+        }
+
+        // no major changes of value, so just add them
+        it->arg.half.arg += it2->arg.half.arg;
+        auto arg = it->arg;
     }
 }
