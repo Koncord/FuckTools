@@ -56,6 +56,7 @@ public:
     void calcLoops();
 
     void incToSet();
+    void useConstant();
 private:
     std::vector<Instruction> &code;
 };

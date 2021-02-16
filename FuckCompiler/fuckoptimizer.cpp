@@ -52,6 +52,7 @@ void FuckOptimizer::compile(FuckOptimizer::OptLevel opt) {
         useOffsets();// use offsets instead bunch of > or <
         setAndInc(); // optimize set(k, a) + inc(k, b) to set(k, a + b)
         cloneCell(); // optimize set(k, 0) + addCell(k, v) to movCell(k, v)
+        useConstant();
     }
     calcLoops();
 }
@@ -157,9 +158,9 @@ void FuckOptimizer::useOffsets() {
             else // outChar, inChar
             {
                 if (p != 0) {
-                ins.arg.half.arg = 1; // use offset version of the outChar or inchar
-                ins.arg.half.offset = p;
-            }
+                    ins.arg.half.arg = 1; // use offset version of the outChar or inchar
+                    ins.arg.half.offset = p;
+                }
             }
             optimized.push_back(ins);
         }
@@ -378,3 +379,38 @@ void FuckOptimizer::incToSet() {
         auto arg = it->arg;
     }
 }
+
+void FuckOptimizer::useConstant() {
+    for (auto it = code.begin(); it != code.end(); ) {
+        // look for sequence of: SET (MUL)+ SET0
+        if (it->fn != Instruction::VMOpcode::set) {
+            ++it;
+            continue;
+        }
+        auto it2 = it;
+        // (MUL)+
+        for (++it2; it2 != code.end(); ++it2) {
+            if (it2->fn != Instruction::VMOpcode::mul)
+                break;
+        }
+
+        // sequence not found
+        if (it2 == code.end() || it2->fn != Instruction::VMOpcode::set) {
+            ++it;
+            continue;
+        }
+
+        for (auto mit = it + 1; mit != it2; ++mit) {
+            mit->fn = Instruction::VMOpcode::set;
+            mit->arg.half.arg = it->arg.half.arg * mit->arg.half.arg;
+        }
+
+        // skip changed code
+        auto dist = std::distance(it, it2);
+        it = code.erase(it);
+        it = code.erase(it + dist - 1);
+        it += dist - 2;
+    }
+}
+
+
