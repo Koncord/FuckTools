@@ -399,6 +399,12 @@ void FuckOptimizer::useConstant() {
             continue;
         }
 
+        // first and last offset must be the same
+        if (it->arg.half.offset != it2->arg.half.offset) {
+            ++it;
+            continue;
+        }
+
         for (auto mit = it + 1; mit != it2; ++mit) {
             mit->fn = Instruction::VMOpcode::set;
             mit->arg.half.arg = it->arg.half.arg * mit->arg.half.arg;
