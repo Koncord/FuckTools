@@ -142,22 +142,22 @@ void FuckOptimizer::useOffsets() {
 
             Instruction ins = *it2;
 
-            if (it2->fn == Instruction::VMOpcode::inc || it2->fn == Instruction::VMOpcode::set) {
-                ins.arg.half.offset = p;
-            } else if (it2->fn == Instruction::VMOpcode::copy) {
-                Instruction::Arg tmp = ins.arg;
-                ins.arg.half.offset += p;
-                ins.arg.half.arg = p;
-            }
-                /*else if(it2->fn == Instruction::VMOpcode::mul)
-                {
+            if (p != 0) {
+                if (it2->fn == Instruction::VMOpcode::inc || it2->fn == Instruction::VMOpcode::set) {
+                    ins.arg.half.offset = p;
+                } else if (it2->fn == Instruction::VMOpcode::copy) {
                     Instruction::Arg tmp = ins.arg;
                     ins.arg.half.offset += p;
                     ins.arg.half.arg = p;
-                }*/
-            else // outChar, inChar
-            {
-                if (p != 0) {
+                }
+                    /*else if(it2->fn == Instruction::VMOpcode::mul)
+                    {
+                        Instruction::Arg tmp = ins.arg;
+                        ins.arg.half.offset += p;
+                        ins.arg.half.arg = p;
+                    }*/
+                else // outChar, inChar
+                {
                     ins.arg.half.arg = 1; // use offset version of the outChar or inchar
                     ins.arg.half.offset = p;
                 }
