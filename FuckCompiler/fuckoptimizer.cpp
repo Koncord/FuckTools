@@ -205,8 +205,8 @@ void FuckOptimizer::copyOrMulLoops(bool mul) {
         if (it->fn == Instruction::VMOpcode::loopBegin)
             begin = it;
         else if (it->fn == Instruction::VMOpcode::loopEnd) {
-            //check for simple operations "><+-"
             bool simple = true;
+            //check for simple operations "><+-"
             for (auto it2 = begin + 1; it2 != it;) {
                 switch (it2->fn) {
                     case Instruction::VMOpcode::inc:
@@ -246,7 +246,6 @@ void FuckOptimizer::copyOrMulLoops(bool mul) {
 
             cells.erase(0);
 
-
             bool isCopy = true;
 
             for (auto &cell : cells) {
@@ -277,10 +276,11 @@ void FuckOptimizer::copyOrMulLoops(bool mul) {
                 }
                 ++begin;
             }
+            // reset value
             begin->fn = Instruction::VMOpcode::set;
             begin->arg.full = 0;
-            ++begin;
-            it = code.erase(begin, it + 1);
+            it = code.erase(begin + 1, it + 1);
+            begin = it;
             continue;
         }
 
@@ -376,7 +376,6 @@ void FuckOptimizer::incToSet() {
 
         // no major changes of value, so just add them
         it->arg.half.arg += it2->arg.half.arg;
-        auto arg = it->arg;
     }
 }
 
