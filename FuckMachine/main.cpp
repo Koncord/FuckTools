@@ -8,6 +8,30 @@
 #include <fstream>
 #include <cstring>
 
+#ifdef WIN32
+
+void *memrchr(const void *s, int c, size_t n) {
+    if (n > 0) {
+        const char *p = (const char *) s;
+        const char *q = p + n;
+        while (true) {
+            q--;
+            if (q < p || q[0] == c) break;
+            q--;
+            if (q < p || q[0] == c) break;
+            q--;
+            if (q < p || q[0] == c) break;
+            q--;
+            if (q < p || q[0] == c) break;
+        }
+        if (q >= p)
+            return (void *) q;
+    }
+    return nullptr;
+}
+
+#endif
+
 class Machine
 {
 public:
