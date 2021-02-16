@@ -10,7 +10,7 @@
 
 #ifdef WIN32
 
-void *memrchr(const void *s, int c, size_t n) {
+void *memrchr(const void *s, int c, size_t n) noexcept {
     if (n > 0) {
         const char *p = (const char *) s;
         const char *q = p + n;
@@ -32,8 +32,7 @@ void *memrchr(const void *s, int c, size_t n) {
 
 #endif
 
-class Machine
-{
+class Machine {
 public:
     Instruction::ArgType currentCellN;
     Instruction::ArgType currentCodeN;
@@ -43,21 +42,18 @@ public:
     std::vector<Instruction::CellType> cells;
     //char cells[Instruction::maxCells] {0};
 
-    Machine() : currentCellN(0), currentCodeN(0)
-    {
+    Machine() noexcept: currentCellN(0), currentCodeN(0) {
         cells.resize(Instruction::maxCells);
-        currentCell = &cells[currentCellN];
+        currentCell = &cells[0];
     }
 
-    Instruction *getCodeCell() noexcept
-    {
+    Instruction *getCodeCell() noexcept {
         if (currentCodeN >= code.size())
             return nullptr;
         return &code[currentCodeN++];
     }
 
-    void JmpCode(Instruction::ArgType n) noexcept
-    {
+    void JmpCode(Instruction::ArgType n) noexcept {
         currentCodeN = n;
         if (currentCodeN > code.size())
             currentCodeN = 0;
@@ -65,8 +61,7 @@ public:
             currentCodeN = static_cast<Instruction::ArgType>(code.size());
     }
 
-    void moveWindow(Instruction::ArgType n) noexcept
-    {
+    void moveWindow(Instruction::ArgType n) noexcept {
         currentCellN += n;
         /*if (currentCellN > cells.size())
             currentCellN = 0;
@@ -76,22 +71,17 @@ public:
     }
 };
 
-class CMDUnit
-{
+class CMDUnit {
 public:
-    explicit CMDUnit(const std::vector<Instruction> &codes)
-    {
+    explicit CMDUnit(const std::vector<Instruction> &codes) noexcept {
         machine.code = codes;
     }
 
-    void Process() noexcept
-    {
-        for (;;)
-        {
+    void Process() noexcept {
+        for (;;) {
             auto cellCode = machine.getCodeCell();
-            if(cellCode == nullptr) break;
-            switch(cellCode->fn)
-            {
+            if (cellCode == nullptr) break;
+            switch (cellCode->fn) {
 
                 case Instruction::VMOpcode::inc:
                     *(machine.currentCell + cellCode->arg.half.offset) += cellCode->arg.half.arg;
@@ -99,16 +89,14 @@ public:
                 case Instruction::VMOpcode::incWin:
                     machine.moveWindow(cellCode->arg.full);
                     break;
-                case Instruction::VMOpcode::outChar:
-                {
+                case Instruction::VMOpcode::outChar: {
                     if (cellCode->arg.half.arg == -1)
                         putchar(*machine.currentCell);
                     else
                         putchar(*(machine.currentCell + cellCode->arg.half.offset));
                     break;
                 }
-                case Instruction::VMOpcode::inChar:
-                {
+                case Instruction::VMOpcode::inChar: {
                     int ch = getchar();
                     if (ch == EOF)
                         std::exit(0);
@@ -118,8 +106,7 @@ public:
                         *(machine.currentCell + cellCode->arg.half.offset) = static_cast<Instruction::CellType>(ch);
                     break;
                 }
-                case Instruction::VMOpcode::loopBegin:
-                {
+                case Instruction::VMOpcode::loopBegin: {
                     if ((*machine.currentCell) == 0)
                         machine.JmpCode(cellCode->arg.full);
                     break;
@@ -128,28 +115,31 @@ public:
                     machine.JmpCode(cellCode->arg.full);
                     break;
                 case Instruction::VMOpcode::set:
-                    *(machine.currentCell + cellCode->arg.half.offset) = static_cast<Instruction::CellType>(cellCode->arg.half.arg);
+                    *(machine.currentCell + cellCode->arg.half.offset) =
+                            static_cast<Instruction::CellType>(cellCode->arg.half.arg);
                     break;
-                case Instruction::VMOpcode::copy:
-                {
-                    *(machine.currentCell + cellCode->arg.half.offset) += *(machine.currentCell + cellCode->arg.half.arg);
+                case Instruction::VMOpcode::copy: {
+                    *(machine.currentCell + cellCode->arg.half.offset) +=
+                            *(machine.currentCell + cellCode->arg.half.arg);
                     break;
                 }
                 case Instruction::VMOpcode::mov:
-                    *(machine.currentCell + cellCode->arg.half.offset) = *(machine.currentCell + cellCode->arg.half.arg);
+                    *(machine.currentCell + cellCode->arg.half.offset) =
+                            *(machine.currentCell + cellCode->arg.half.arg);
                     break;
-                case Instruction::VMOpcode::mul:
-                {
-                    *(machine.currentCell + cellCode->arg.half.offset) += (*machine.currentCell) * cellCode->arg.half.arg;
+                case Instruction::VMOpcode::mul: {
+                    *(machine.currentCell + cellCode->arg.half.offset) +=
+                            (*machine.currentCell) * cellCode->arg.half.arg;
                     break;
                 }
-                case Instruction::VMOpcode::scan:
-                {
+                case Instruction::VMOpcode::scan: {
                     char *ptr = (&machine.cells[0] + machine.currentCellN);
-                    if(cellCode->arg.full < 0)
-                        machine.moveWindow( -(ptr - (char*) memrchr(&machine.cells[0], 0, machine.currentCellN + 1)));
+                    if (cellCode->arg.full < 0)
+                        machine.moveWindow(-(ptr - (char *) memrchr(&machine.cells[0], 0, machine.currentCellN + 1)));
                     else
-                        machine.moveWindow((char*) memchr(&machine.cells[0] + machine.currentCellN, 0, Instruction::maxCells) - ptr);
+                        machine.moveWindow(
+                                (char *) memchr(&machine.cells[0] + machine.currentCellN, 0, Instruction::maxCells) -
+                                ptr);
                     break;
                 }
                 default:
@@ -162,9 +152,8 @@ private:
     Machine machine;
 };
 
-int main(int argc, char **argv)
-{
-    auto _error = [](const char *msg){
+int main(int argc, char **argv) noexcept {
+    auto _error = [](const char *msg) {
         std::cerr << "fuckmachine: " << msg << "\nexecution interrupted." << std::endl;
         exit(1);
     };
@@ -179,7 +168,7 @@ int main(int argc, char **argv)
     if (!bfc.is_open())
         _error("fatal error: file not found");
     codes = Instruction::load(bfc);
-    if(codes.empty())
+    if (codes.empty())
         _error("error: unknown file format");
     bfc.close();
 
