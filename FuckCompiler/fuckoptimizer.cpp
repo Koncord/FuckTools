@@ -156,8 +156,10 @@ void FuckOptimizer::useOffsets() {
                 }*/
             else // outChar, inChar
             {
+                if (p != 0) {
                 ins.arg.half.arg = 1; // use offset version of the outChar or inchar
                 ins.arg.half.offset = p;
+            }
             }
             optimized.push_back(ins);
         }
