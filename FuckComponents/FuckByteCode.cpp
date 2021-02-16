@@ -18,7 +18,7 @@ std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept
 
     for (int i = 0; i < numCodes; ++i)
     {
-        char buff[size()];
+        char *buff = new char[size()];
         bfc.read(buff, size());
         switch (static_cast<VMOpcode>(buff[0]))
         {
@@ -42,6 +42,7 @@ std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept
         }
 
         codes[i] = Instruction(static_cast<VMOpcode>(buff[0]), *reinterpret_cast<Arg *>(&buff[1]));
+        delete[] buff;
     }
 
     return codes;
