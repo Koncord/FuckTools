@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <FuckComponents/FuckByteCode.hpp>
 #include <fstream>
-#include <iomanip>
 
 int main(int argc, char **argv)
 {
@@ -49,17 +48,20 @@ int main(int argc, char **argv)
             ccode << "    ";
     };
 
-    ccode << "#define _GNU_SOURCE\n#include <stdio.h>\n#include <string.h>\n\n";
+    ccode << "#define _GNU_SOURCE\n#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n\n";
     ccode << "int main()\n{" << std::endl;
     insertTabs(tablvl);
     ccode << "int i = 0;\n";
     insertTabs(tablvl);
-    ccode << "char arr[" << Instruction::maxCells << "];\n";
-    insertTabs(tablvl);
-    ccode << "memset(arr, 0, sizeof(arr));" << std::endl;
+    //ccode << "char arr[" << Instruction::maxCells << "];\n";
+    ccode << "char *arr = calloc(" << Instruction::maxCells << ", 1);\n";
+    //insertTabs(tablvl);
+    //ccode << "memset(arr, 0, sizeof(arr));" << std::endl;
+    //ccode << "memset(arr, 0," << Instruction::maxCells <<");" << std::endl;
 
-    for (const auto &code : codes)
+    for (auto it = codes.begin(); it != codes.end(); ++it)
     {
+        auto const &code = *it;
         if (code.fn == Instruction::VMOpcode::loopBegin)
             insertTabs(tablvl++);
         else if (code.fn == Instruction::VMOpcode::loopEnd)
@@ -78,9 +80,9 @@ int main(int argc, char **argv)
                     ccode << "arr[i - " << -code.arg.half.offset << "]";
 
                 if(code.arg.half.arg > 0)
-                    ccode << " += " << code.arg.half.arg << ";" << std::endl;
+                    ccode << " += " << (int) code.arg.half.arg << ";" << std::endl;
                 else
-                    ccode << " -= " << -code.arg.half.arg << ";" << std::endl;
+                    ccode << " -= " << (int) -code.arg.half.arg << ";" << std::endl;
                 break;
             case Instruction::VMOpcode::incWin:
                 if(code.arg.full > 0)
@@ -126,7 +128,7 @@ int main(int argc, char **argv)
                     ccode << "arr[i + " << code.arg.half.offset << "]";
                 else
                     ccode << "arr[i - " << -code.arg.half.offset << "]";
-                ccode << " = " << code.arg.half.arg << ";" << std::endl;
+                ccode << " = " << (int) code.arg.half.arg << ";" << std::endl;
             }
                 break;
             case Instruction::VMOpcode::mov:
@@ -140,7 +142,10 @@ int main(int argc, char **argv)
                 ccode << " ";
                 if(code.fn == Instruction::VMOpcode::copy)
                     ccode << "+";
-                ccode << "= arr[i + " << code.arg.half.arg << "];" << std::endl;
+                ccode << "= arr[i";
+                if (code.arg.half.arg != 0)
+                    ccode << " + " << (int) code.arg.half.arg;
+                ccode << "];" << std::endl;
                 break;
             case Instruction::VMOpcode::mul:
             {
@@ -150,7 +155,14 @@ int main(int argc, char **argv)
                     ccode << "arr[i + " << code.arg.half.offset << "]";
                 else
                     ccode << "arr[i - " << -code.arg.half.offset << "]";
-                ccode << " += arr[i] * "<< code.arg.half.arg << ";" << std::endl;
+                if (code.arg.half.arg == -1)
+                    ccode << " -= ";
+                else
+                    ccode << " += ";
+                ccode << "arr[i]";
+                if (std::abs(code.arg.half.arg) != 1)
+                    ccode << " * " << (int) code.arg.half.arg;
+                ccode << ";" << std::endl;
                 break;
             }
             case Instruction::VMOpcode::scan:
@@ -160,10 +172,13 @@ int main(int argc, char **argv)
                     ccode << "i += (int)(memchr(arr + i, 0, sizeof(arr)) - (void *)(arr + i));" << std::endl;
                 break;
             default:
+                return 1;
                 break;
         }
     }
 
+    insertTabs(tablvl);
+    ccode << "free(arr);\n";
     insertTabs(tablvl);
     ccode << "return 0;\n}" << std::endl;
 
