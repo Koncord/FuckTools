@@ -40,7 +40,6 @@ void FuckOptimizer::compile(FuckOptimizer::OptLevel opt) {
         contract(); // contract series of >> or +++ to 1 command
     }
     if (opt >= OptLevel::kidLevel) {
-        incToSet(); // change INC to SET where it's possible
         memZero(); // [+] and [-]
         scanMem(); // [>] and [<]
     }
@@ -50,9 +49,10 @@ void FuckOptimizer::compile(FuckOptimizer::OptLevel opt) {
     }
     if (opt >= OptLevel::motherfucker) {
         useOffsets();// use offsets instead bunch of > or <
+        incToSet(); // change INC to SET where it's possible
+        useConstant();
         setAndInc(); // optimize set(k, a) + inc(k, b) to set(k, a + b)
         cloneCell(); // optimize set(k, 0) + addCell(k, v) to movCell(k, v)
-        useConstant();
     }
     calcLoops();
 }
@@ -359,13 +359,18 @@ void FuckOptimizer::incToSet() {
         bool canChange = true;
         auto it2 = code.begin();
         // TODO: look for previous operations that emmit current offset
+        bool inLoop = false;
         for (; it2 != it; ++it2) {
             if (it->arg.half.offset == it2->arg.half.offset) {
                 canChange = false;
                 break;
             }
+            if (it2->fn == Instruction::VMOpcode::loopBegin)
+                inLoop = true;
+            else if (it2->fn == Instruction::VMOpcode::loopEnd)
+                inLoop = false;
         }
-        if (!canChange)
+        if (!canChange || inLoop)
             continue;
 
         it->fn = Instruction::VMOpcode::set;
@@ -389,15 +394,19 @@ void FuckOptimizer::useConstant() {
         auto it2 = it;
         // (MUL)+
         for (++it2; it2 != code.end(); ++it2) {
-            if (it2->fn != Instruction::VMOpcode::mul)
+            if (it2->fn != Instruction::VMOpcode::mul && it2->fn != Instruction::VMOpcode::set && it2->fn != Instruction::VMOpcode::copy)
                 break;
         }
 
+        it2 -= 1;
+
         // sequence not found
-        if (it2 == code.end() || it2->fn != Instruction::VMOpcode::set) {
+        if (it2 == it || it2->fn != Instruction::VMOpcode::set) {
             ++it;
             continue;
         }
+
+        auto dist = std::distance(it, it2);
 
         // first and last offset must be the same
         if (it->arg.half.offset != it2->arg.half.offset) {
@@ -406,15 +415,19 @@ void FuckOptimizer::useConstant() {
         }
 
         for (auto mit = it + 1; mit != it2; ++mit) {
-            mit->fn = Instruction::VMOpcode::set;
-            mit->arg.half.arg = it->arg.half.arg * mit->arg.half.arg;
+            if (mit->fn == Instruction::VMOpcode::mul) {
+                mit->fn = Instruction::VMOpcode::set;
+                mit->arg.half.arg = it->arg.half.arg * mit->arg.half.arg;
+            } else if (mit->fn == Instruction::VMOpcode::copy) {
+                mit->arg.half.arg = it->arg.half.arg;
+            }
         }
 
         // skip changed code
-        auto dist = std::distance(it, it2);
         it = code.erase(it);
         it = code.erase(it + dist - 1);
-        it += dist - 2;
+        if (it != code.end())
+            it += dist - 2;
     }
 }
 
