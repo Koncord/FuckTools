@@ -2,60 +2,68 @@
 // Created by koncord on 28.01.18.
 //
 
-#include <stdexcept>
 #include <fstream>
-#include <iostream>
 #include "FuckByteCode.hpp"
 
-std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept
-{
+std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept {
+    std::vector<Instruction> codes;
+    VMOpcode op;
 
-    bfc.seekg(0, std::ios::end);
-    auto numCodes = static_cast<size_t>(bfc.tellg() / size());
-    bfc.seekg(0, std::ios::beg);
+    while ( bfc.read((char*) &op, sizeof(VMOpcode))) {
 
-    std::vector<Instruction> codes(numCodes);
 
-    for (int i = 0; i < numCodes; ++i)
-    {
-        char *buff = new char[size()];
-        bfc.read(buff, size());
-        switch (static_cast<VMOpcode>(buff[0]))
-        {
+        Arg a{};
+
+        switch (op) {
             case VMOpcode::inc:
             case VMOpcode::sub:
-            case VMOpcode::incWin:
-            case VMOpcode::decWin:
             case VMOpcode::outChar:
             case VMOpcode::inChar:
-            case VMOpcode::loopBegin:
-            case VMOpcode::loopEnd:
             case VMOpcode::set:
             case VMOpcode::copy:
             case VMOpcode::mul:
-            case VMOpcode::scan:
             case VMOpcode::mov:
+                bfc.read((char*)&a.half.offset, sizeof(HalfType));
+                bfc.read((char*)&a.half.arg, sizeof(CellType));
+                break;
+            case VMOpcode::incWin:
+            case VMOpcode::decWin:
+            case VMOpcode::loopBegin:
+            case VMOpcode::loopEnd:
+            case VMOpcode::scan:
+                bfc.read((char*)&a.full, sizeof(ArgType));
                 break;
             default:
                 codes.clear();
                 return codes;
         }
 
-        codes[i] = Instruction(static_cast<VMOpcode>(buff[0]), *reinterpret_cast<Arg *>(&buff[1]));
-        delete[] buff;
+        codes.emplace_back(op, a);
     }
 
     return codes;
 }
 
-void Instruction::save(const std::string &file, const std::vector<Instruction> &codes) noexcept
-{
+void Instruction::save(const std::string &file, const std::vector<Instruction> &codes) noexcept {
     std::ofstream bfc(file, std::ios::binary);
 
-    for (const auto &c : codes)
-    {
+    for (const auto &c : codes) {
         bfc.write(reinterpret_cast<const char *>(&c.fn), sizeof(VMOpcode));
-        bfc.write(reinterpret_cast<const char *>(&c.arg), sizeof(Arg));
+        switch (c.fn) {
+            case VMOpcode::inc:
+            case VMOpcode::sub:
+            case VMOpcode::outChar:
+            case VMOpcode::inChar:
+            case VMOpcode::set:
+            case VMOpcode::copy:
+            case VMOpcode::mul:
+            case VMOpcode::mov:
+                bfc.write((char*) &c.arg.half.offset, sizeof(HalfType));
+                bfc.write((char*) &c.arg.half.arg, sizeof(CellType));
+                break;
+            default:
+                bfc.write(reinterpret_cast<const char *>(&c.arg.full), sizeof(ArgType));
+        }
     }
     bfc.close();
 }

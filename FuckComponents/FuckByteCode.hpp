@@ -9,10 +9,8 @@
 #include <vector>
 #include <istream>
 
-struct Instruction
-{
-    enum class VMOpcode : char
-    {
+struct Instruction {
+    enum class VMOpcode : char {
         inc = '+',
         sub = '-',
         incWin = '>',
@@ -36,19 +34,19 @@ struct Instruction
     VMOpcode fn;
     union Arg {
         ArgType full;
-        struct{
+        struct {
             HalfType offset;
-            HalfType arg;
+            CellType pad0;
+            CellType arg;
         } half;
     } arg;
 
-    explicit Instruction(VMOpcode fn = VMOpcode::invalid, Arg arg = Arg{-1}) : fn(fn), arg(arg) {}
-    explicit Instruction(VMOpcode fn, ArgType arg) : fn(fn) {this->arg.full = arg;}
+    explicit Instruction(VMOpcode fn = VMOpcode::invalid, Arg arg = Arg{-1}) noexcept: fn(fn), arg(arg) {}
+
+    explicit Instruction(VMOpcode fn, ArgType arg) noexcept: fn(fn) { this->arg.full = arg; }
 
     static std::vector<Instruction> load(std::istream &bfc) noexcept;
-    static void save(const std::string &file, const std::vector<Instruction> & codes) noexcept;
-
-    inline static int size() noexcept { return sizeof(ArgType) + sizeof(VMOpcode); }
+    static void save(const std::string &file, const std::vector<Instruction> &codes) noexcept;
 };
 
 #endif //FUCKTOOLS_FUCKBYTECODE_HPP
