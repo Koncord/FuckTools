@@ -8,8 +8,6 @@
 #include <fstream>
 #include <cstring>
 
-#ifdef WIN32
-
 void *memrchr(const void *s, int c, size_t n) noexcept {
     if (n > 0) {
         const char *p = (const char *) s;
@@ -29,8 +27,6 @@ void *memrchr(const void *s, int c, size_t n) noexcept {
     }
     return nullptr;
 }
-
-#endif
 
 class Machine {
 public:
