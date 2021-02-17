@@ -134,12 +134,12 @@ public:
                 }
                 case Instruction::VMOpcode::scan: {
                     char *ptr = (&machine.cells[0] + machine.currentCellN);
+                    Instruction::ArgType v;
                     if (cellCode->arg.full < 0)
-                        machine.moveWindow(-(ptr - (char *) memrchr(&machine.cells[0], 0, machine.currentCellN + 1)));
+                        v = -(ptr - (char *) memrchr(&machine.cells[0], 0, machine.currentCellN + 1));
                     else
-                        machine.moveWindow(
-                                (char *) memchr(&machine.cells[0] + machine.currentCellN, 0, Instruction::maxCells) -
-                                ptr);
+                        v = (char *) memchr(&machine.cells[0] + machine.currentCellN, 0, Instruction::maxCells) - ptr;
+                    machine.moveWindow(v);
                     break;
                 }
                 default:
