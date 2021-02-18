@@ -8,7 +8,9 @@
 #include <fstream>
 #include <cstring>
 
-void *memrchr(const void *s, int c, size_t n) noexcept {
+// todo: check in CMake for memchr
+#if 1
+static void *my_memrchr(const void *s, int c, size_t n) noexcept {
     if (n > 0) {
         const char *p = (const char *) s;
         const char *q = p + n;
@@ -27,6 +29,7 @@ void *memrchr(const void *s, int c, size_t n) noexcept {
     }
     return nullptr;
 }
+#endif
 
 class Machine {
 public:
@@ -102,11 +105,8 @@ public:
                         *(machine.currentCell + cellCode->arg.half.offset) = static_cast<Instruction::CellType>(ch);
                     break;
                 }
-                case Instruction::VMOpcode::loopBegin: {
-                    if ((*machine.currentCell) == 0)
-                        machine.JmpCode(cellCode->arg.full);
-                    break;
-                }
+                case Instruction::VMOpcode::loopBegin:
+                    if (*machine.currentCell != 0) break;
                 case Instruction::VMOpcode::loopEnd:
                     machine.JmpCode(cellCode->arg.full);
                     break;
@@ -132,7 +132,7 @@ public:
                     char *ptr = (&machine.cells[0] + machine.currentCellN);
                     Instruction::ArgType v;
                     if (cellCode->arg.full < 0)
-                        v = -(ptr - (char *) memrchr(&machine.cells[0], 0, machine.currentCellN + 1));
+                        v = -(ptr - (char *) my_memrchr(&machine.cells[0], 0, machine.currentCellN + 1));
                     else
                         v = (char *) memchr(&machine.cells[0] + machine.currentCellN, 0, Instruction::maxCells) - ptr;
                     machine.moveWindow(v);
@@ -160,14 +160,12 @@ int main(int argc, char **argv) noexcept {
     std::vector<Instruction> codes;
     std::ifstream bfc(argv[1], std::ios::binary);
 
-
     if (!bfc.is_open())
         _error("fatal error: file not found");
     codes = Instruction::load(bfc);
     if (codes.empty())
         _error("error: unknown file format");
     bfc.close();
-
 
     CMDUnit cmduint(codes);
     cmduint.Process();

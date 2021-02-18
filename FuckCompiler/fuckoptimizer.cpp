@@ -5,6 +5,7 @@
 #include "fuckoptimizer.hpp"
 #include <iostream>
 #include <map>
+#include <algorithm>
 
 FuckOptimizer::FuckOptimizer(Container &code) : code(code) {
 }
