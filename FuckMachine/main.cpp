@@ -10,25 +10,23 @@
 
 // todo: check in CMake for memchr
 #if 1
+
 static void *my_memrchr(const void *s, int c, size_t n) noexcept {
     if (n > 0) {
         const char *p = (const char *) s;
         const char *q = p + n;
         while (true) {
-            q--;
-            if (q < p || q[0] == c) break;
-            q--;
-            if (q < p || q[0] == c) break;
-            q--;
-            if (q < p || q[0] == c) break;
-            q--;
-            if (q < p || q[0] == c) break;
+            if (--q < p || q[0] == c) break;
+            if (--q < p || q[0] == c) break;
+            if (--q < p || q[0] == c) break;
+            if (--q < p || q[0] == c) break;
         }
         if (q >= p)
             return (void *) q;
     }
     return nullptr;
 }
+
 #endif
 
 class Machine {
@@ -157,12 +155,11 @@ int main(int argc, char **argv) noexcept {
     if (argc < 2)
         _error("no input file");
 
-    std::vector<Instruction> codes;
     std::ifstream bfc(argv[1], std::ios::binary);
 
     if (!bfc.is_open())
         _error("fatal error: file not found");
-    codes = Instruction::load(bfc);
+    auto codes = Instruction::load(bfc);
     if (codes.empty())
         _error("error: unknown file format");
     bfc.close();
