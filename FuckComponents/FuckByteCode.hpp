@@ -9,22 +9,23 @@
 #include <vector>
 #include <istream>
 
+#pragma pack(push, 1)
 struct Instruction {
     enum class VMOpcode : char {
-        inc = '+',
-        sub = '-',
-        incWin = '>',
-        decWin = '<',
-        outChar = '.',
-        inChar = ',',
-        loopBegin = '[',
-        loopEnd = ']',
-        set = '=',
-        copy = 'c',
-        mul = 'm',
-        scan = 's',
-        mov = 'v',
         invalid = 0,
+        inc,
+        sub,
+        incWin,
+        decWin,
+        outChar,
+        inChar,
+        loopBegin,
+        loopEnd,
+        set,
+        copy,
+        mul,
+        scan,
+        mov,
     };
     typedef short HalfType;
     typedef int ArgType;
@@ -33,6 +34,12 @@ struct Instruction {
 
     VMOpcode fn;
     union Arg {
+        Arg() : full(0) {}
+
+        Arg(ArgType full) : full(full) {}
+
+        Arg(HalfType offset, CellType arg) : half{offset, 0, arg} {}
+
         ArgType full;
         struct {
             HalfType offset;
@@ -43,10 +50,13 @@ struct Instruction {
 
     explicit Instruction(VMOpcode fn = VMOpcode::invalid, Arg arg = Arg{-1}) noexcept: fn(fn), arg(arg) {}
 
+    explicit Instruction(VMOpcode fn = VMOpcode::invalid, HalfType offset = -1, CellType arg = -1) noexcept: fn(fn), arg(offset, arg) {}
+
     explicit Instruction(VMOpcode fn, ArgType arg) noexcept: fn(fn) { this->arg.full = arg; }
 
     static std::vector<Instruction> load(std::istream &bfc) noexcept;
     static void save(const std::string &file, const std::vector<Instruction> &codes) noexcept;
 };
+#pragma pack(pop)
 
 #endif //FUCKTOOLS_FUCKBYTECODE_HPP

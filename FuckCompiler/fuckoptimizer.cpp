@@ -183,8 +183,7 @@ void FuckOptimizer::useOffsets() {
 }
 
 void FuckOptimizer::scanMem() {
-    // TODO: FIX CRASH ON hello.bf
-    for (auto it = code.begin(); it != code.end(); ++it) {
+    for (auto it = code.begin(); it != code.end() - 1; ++it) {
         auto sz = ((it - code.begin()) + 3);
         if (it->fn == Instruction::VMOpcode::loopBegin && sz <= code.size()) {
             auto next = ++it;
@@ -375,7 +374,7 @@ void FuckOptimizer::incToSet() {
             continue;
 
         it->fn = Instruction::VMOpcode::set;
-        // no any changes of this offset
+        // no changes of this offset
         if (it2 == it) {
             continue;
         }
@@ -386,7 +385,7 @@ void FuckOptimizer::incToSet() {
 }
 
 void FuckOptimizer::useConstant() {
-    for (auto it = code.begin(); it != code.end(); ) {
+    for (auto it = code.begin(); it != code.end();) {
         // look for sequence of: SET (MUL)+ SET0
         if (it->fn != Instruction::VMOpcode::set) {
             ++it;
@@ -395,7 +394,8 @@ void FuckOptimizer::useConstant() {
         auto it2 = it;
         // (MUL)+
         for (++it2; it2 != code.end(); ++it2) {
-            if (it2->fn != Instruction::VMOpcode::mul && it2->fn != Instruction::VMOpcode::set && it2->fn != Instruction::VMOpcode::copy)
+            if (it2->fn != Instruction::VMOpcode::mul && it2->fn != Instruction::VMOpcode::set &&
+                it2->fn != Instruction::VMOpcode::copy)
                 break;
         }
 

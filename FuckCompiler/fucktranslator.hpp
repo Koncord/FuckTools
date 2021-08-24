@@ -16,34 +16,39 @@ public:
     std::vector<Instruction> translate() {
         unsigned char ch;
         std::vector<Instruction> code;
-        Instruction::Arg arg{0};
-        arg.half.arg = 1;
-
-        Instruction::Arg arg2{0};
-        arg2.half.arg = -1;
 
         while (file >> ch) {
-            switch ((Instruction::VMOpcode) ch) {
-#define FUCK_PARSE(opcode, arg) case opcode: code.emplace_back(opcode, arg); break;
-                FUCK_PARSE(Instruction::VMOpcode::inc, arg);
-                case Instruction::VMOpcode::sub:
-                    code.emplace_back(Instruction::VMOpcode::inc, arg2);
+            switch (ch) {
+                case '+':
+                    code.emplace_back(Instruction::VMOpcode::inc, 0, 1);
                     break;
-                FUCK_PARSE(Instruction::VMOpcode::incWin, 1);
-                case Instruction::VMOpcode::decWin:
+                case '-':
+                    code.emplace_back(Instruction::VMOpcode::inc, 0, -1);
+                    break;
+                case '>':
+                    code.emplace_back(Instruction::VMOpcode::incWin, 1);
+                    break;
+                case '<':
                     code.emplace_back(Instruction::VMOpcode::incWin, -1);
                     break;
-                FUCK_PARSE(Instruction::VMOpcode::inChar, arg2);
-                FUCK_PARSE(Instruction::VMOpcode::outChar, arg2);
-                FUCK_PARSE(Instruction::VMOpcode::loopBegin, 0x0000DEAD);
-                FUCK_PARSE(Instruction::VMOpcode::loopEnd, 0x0000DEAD);
-#undef FUCK_PARSE
+                case ',':
+                    code.emplace_back(Instruction::VMOpcode::inChar, 0, -1);
+                    break;
+                case '.':
+                    code.emplace_back(Instruction::VMOpcode::outChar, 0, -1);
+                    break;
+                case '[':
+                    code.emplace_back(Instruction::VMOpcode::loopBegin, 0x0000DEAD);
+                    break;
+                case ']':
+                    code.emplace_back(Instruction::VMOpcode::loopEnd, 0x0000DEAD);
+                    break;
                 default:
                     //std::cerr << "Unknown opcode: " << ch << std::endl;
                     break;
             }
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
         return code;
     }
 
