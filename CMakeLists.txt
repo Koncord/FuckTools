@@ -17,6 +17,7 @@ add_subdirectory(FuckComponents)
 add_subdirectory(FuckMachine)
 add_subdirectory(FuckCompiler)
 add_subdirectory(BFCC)
+add_subdirectory(BFCD)
 #add_subdirectory(PreFuck)
 
 add_subdirectory(tests)
