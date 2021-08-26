@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     return NULL;
 }
 )" << std::endl;
-    ccode << "int main()\n{" << std::endl;
+    ccode << "int main() {" << std::endl;
     insertTabs(tablvl);
     ccode << "int i = 0;\n";
     insertTabs(tablvl);
@@ -94,7 +94,6 @@ int main(int argc, char **argv) {
         switch (code.fn) {
             case Instruction::VMOpcode::inc: {
                 pushOffset(code);
-
                 if (code.arg.half.arg > 0)
                     ccode << "+= " << (int) code.arg.half.arg << ";" << std::endl;
                 else
@@ -154,34 +153,14 @@ int main(int argc, char **argv) {
                 ccode << "}" << std::endl;
                 break;
             case Instruction::VMOpcode::set: {
-                // concatenate series of nullsets to single memset
-                auto val = (int) code.arg.half.arg;
-                auto startOff = code.arg.half.offset;
-                auto toIt = it;
-                int cnt = 1;
-                for (auto it2 = std::next(it); it2 != codes.end(); ++it2) {
-                    auto code2 = *it2;
-                    if (code2.fn == Instruction::VMOpcode::set) {
-                        if (code2.arg.half.arg == val && code2.arg.half.offset == ++startOff) {
-                            toIt = it2;
-                            cnt++;
-                        }
-                        else
-                            break;
-                    } else {
-                        break;
-                    }
-                }
-                if (toIt != it) {
-                    ccode << "memset(&";
-                    pushOffset(code, false);
-                    ccode << ", " << val << ", " << cnt << ");" << std::endl;
-                    it = toIt;
-                    break;
-                }
                 pushOffset(code);
                 ccode << "= " << (int) code.arg.half.arg << ";" << std::endl;
             }
+                break;
+            case Instruction::VMOpcode::memset:
+                ccode << "memset(&";
+                pushOffset(code, false);
+                ccode << ", " << (int) code.arg.half.arg << ", " << (int) code.arg.half.arg2 << ");" << std::endl;
                 break;
             case Instruction::VMOpcode::mov:
             case Instruction::VMOpcode::copy:

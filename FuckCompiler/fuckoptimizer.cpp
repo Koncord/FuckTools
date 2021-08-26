@@ -54,6 +54,7 @@ void FuckOptimizer::compile(FuckOptimizer::OptLevel opt) {
         useConstant();
         setAndInc(); // optimize set(k, a) + inc(k, b) to set(k, a + b)
         cloneCell(); // optimize set(k, 0) + addCell(k, v) to movCell(k, v)
+        setToMemset();
     }
     calcLoops();
 }
@@ -62,10 +63,26 @@ void FuckOptimizer::setAndInc() {
     for (auto it = code.begin(); it != code.end();) {
         // look for INC opcode that is not first
         if (it->fn == Instruction::VMOpcode::inc && it != code.begin()) {
-            auto prev = it - 1;
+            auto prev = std::prev(it);
             // if the previous opcode was SET with the same offset, shrink it
-            if (prev->fn == Instruction::VMOpcode::set && prev->arg.half.offset == it->arg.half.offset) {
+            if (prev != code.end()
+                && prev->fn == Instruction::VMOpcode::set
+                && prev->arg.half.offset == it->arg.half.offset) {
                 prev->arg.full = it->arg.full;
+                it = code.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
+
+    // remove useless operations
+    for (auto it = code.begin(); it != code.end();) {
+        if (it->fn == Instruction::VMOpcode::inc && it != code.begin()) {
+            auto next = std::next(it);
+            if (next != code.end()
+                && next->fn == Instruction::VMOpcode::set
+                && next->arg.half.offset == it->arg.half.offset) {
                 it = code.erase(it);
                 continue;
             }
@@ -78,8 +95,10 @@ void FuckOptimizer::cloneCell() {
     for (auto it = code.begin(); it != code.end();) {
         if (it->fn == Instruction::VMOpcode::copy && it != code.begin()) {
             //auto next = it + 1;
-            auto prev = it - 1;
-            if (prev->fn == Instruction::VMOpcode::set && prev->arg.half.arg == 0
+            auto prev = std::prev(it);
+            if (prev != code.end()
+                && prev->fn == Instruction::VMOpcode::set
+                && prev->arg.half.arg == 0
                 && prev->arg.half.offset == it->arg.half.offset) {
                 prev->fn = Instruction::VMOpcode::mov;
                 prev->arg.full = it->arg.full;
@@ -381,6 +400,43 @@ void FuckOptimizer::incToSet() {
 
         // no major changes of value, so just add them
         it->arg.half.arg += it2->arg.half.arg;
+    }
+}
+
+void FuckOptimizer::setToMemset() {
+    for (auto it = code.begin(); it != code.end();) {
+        if (it->fn != Instruction::VMOpcode::set) {
+            ++it;
+            continue;
+        }
+        auto val = (int) it->arg.half.arg;
+        auto startOff = it->arg.half.offset;
+        auto toIt = it;
+        int cnt = 1;
+        for (auto it2 = std::next(it); it2 != code.end(); ++it2) {
+            auto code2 = *it2;
+            if (code2.fn == Instruction::VMOpcode::set) {
+                if (code2.arg.half.arg == val && code2.arg.half.offset == ++startOff) {
+                    toIt = it2;
+                    cnt++;
+                }
+                else
+                    break;
+            } else {
+                break;
+            }
+        }
+        if (toIt != it) {
+            if (cnt > Instruction::CellMaxValue) {
+                // todo: do multiple memsets
+                continue;
+            }
+            it->fn = Instruction::VMOpcode::memset;
+            it->arg.half.arg2 = cnt;
+            it = code.erase(it + 1, toIt + 1);
+            continue;
+        }
+        ++it;
     }
 }
 

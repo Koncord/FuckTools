@@ -23,6 +23,7 @@ std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept {
             case VMOpcode::copy:
             case VMOpcode::mul:
             case VMOpcode::mov:
+            case VMOpcode::memset:
                 /*bfc.read((char*)&a.half.offset, sizeof(HalfType));
                 bfc.read((char*)&a.half.arg, sizeof(CellType));
                 break;*/
@@ -58,6 +59,7 @@ void Instruction::save(const std::string &file, const std::vector<Instruction> &
             case VMOpcode::copy:
             case VMOpcode::mul:
             case VMOpcode::mov:
+            case VMOpcode::memset:
                 /*bfc.write((char*) &c.arg.half.offset, sizeof(HalfType));
                 bfc.write((char*) &c.arg.half.arg, sizeof(CellType));
                 break;*/

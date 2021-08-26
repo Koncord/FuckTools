@@ -26,11 +26,13 @@ struct Instruction {
         mul,
         scan,
         mov,
+        memset,
     };
     typedef short HalfType;
     typedef int ArgType;
     typedef char CellType;
     static const int maxCells = 30000; // classic BF
+    static const int CellMaxValue = UCHAR_MAX;
 
     VMOpcode fn;
     union Arg {
@@ -43,7 +45,7 @@ struct Instruction {
         ArgType full;
         struct {
             HalfType offset;
-            CellType pad0;
+            CellType arg2;
             CellType arg;
         } half;
     } arg;

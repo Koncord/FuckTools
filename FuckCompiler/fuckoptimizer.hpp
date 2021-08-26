@@ -57,6 +57,8 @@ public:
 
     void incToSet();
     void useConstant();
+
+    void setToMemset();
 private:
     std::vector<Instruction> &code;
 };

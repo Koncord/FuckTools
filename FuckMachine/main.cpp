@@ -136,6 +136,11 @@ public:
                     machine.moveWindow(v);
                     break;
                 }
+                case Instruction::VMOpcode::memset:
+                    memset(&machine.currentCell[cellCode->arg.half.offset],
+                           static_cast<Instruction::CellType>(cellCode->arg.half.arg),
+                           static_cast<Instruction::CellType>(cellCode->arg.half.arg2));
+                    break;
                 default:
                     break;
             }
