@@ -8,9 +8,11 @@
 std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept {
     std::vector<Instruction> codes;
     VMOpcode op;
+    int codesCnt;
+    bfc.read((char *) &codesCnt, sizeof(int));
+    codes.reserve(codesCnt);
 
     while ( bfc.read((char*) &op, sizeof(VMOpcode))) {
-
 
         Arg a{};
 
@@ -23,15 +25,15 @@ std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept {
             case VMOpcode::copy:
             case VMOpcode::mul:
             case VMOpcode::mov:
-            case VMOpcode::memset:
-                /*bfc.read((char*)&a.half.offset, sizeof(HalfType));
+                bfc.read((char*)&a.half.offset, sizeof(HalfType));
                 bfc.read((char*)&a.half.arg, sizeof(CellType));
-                break;*/
+                break;
             case VMOpcode::incWin:
             case VMOpcode::decWin:
             case VMOpcode::loopBegin:
             case VMOpcode::loopEnd:
             case VMOpcode::scan:
+            case VMOpcode::memset:
                 bfc.read((char*)&a.full, sizeof(ArgType));
                 break;
             default:
@@ -47,6 +49,8 @@ std::vector<Instruction> Instruction::load(std::istream &bfc) noexcept {
 
 void Instruction::save(const std::string &file, const std::vector<Instruction> &codes) noexcept {
     std::ofstream bfc(file, std::ios::binary);
+    int codesCnt = codes.size();
+    bfc.write((char *) &codesCnt, sizeof(int));
 
     for (const auto &c : codes) {
         bfc.write(reinterpret_cast<const char *>(&c.fn), sizeof(VMOpcode));
@@ -59,10 +63,9 @@ void Instruction::save(const std::string &file, const std::vector<Instruction> &
             case VMOpcode::copy:
             case VMOpcode::mul:
             case VMOpcode::mov:
-            case VMOpcode::memset:
-                /*bfc.write((char*) &c.arg.half.offset, sizeof(HalfType));
+                bfc.write((char*) &c.arg.half.offset, sizeof(HalfType));
                 bfc.write((char*) &c.arg.half.arg, sizeof(CellType));
-                break;*/
+                break;
             default:
                 bfc.write(reinterpret_cast<const char *>(&c.arg.full), sizeof(ArgType));
         }
