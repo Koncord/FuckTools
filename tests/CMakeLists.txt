@@ -1,7 +1,7 @@
 if(MSVC)
     set (CXX_OUT_PARAM "/link /out:")
 else()
-    set (CXX_OUT_PARAM "-o")
+    set (CXX_OUT_PARAM -funroll-all-loops -O2 -o)
 endif()
 
 add_custom_target(test_fuckc
