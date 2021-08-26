@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
     auto pushStr = [&bfcode](std::string const &str) {
         static int cnt = 0;
-        for (char i : str) {
+        for (char i: str) {
             if (cnt == 80) {
                 cnt = 0;
                 bfcode << "\n";
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         }
     };
 
-    auto winMov = [&pushStr](Instruction const &code, std::function<void (Instruction const &)> const &fn) {
+    auto winMov = [&pushStr](Instruction const &code, std::function<void(Instruction const &)> const &fn) {
         for (int i = 0; i < abs(code.arg.half.offset); ++i)
             pushStr(code.arg.half.offset < 0 ? "<" : ">");
         fn(code);
@@ -54,7 +54,19 @@ int main(int argc, char **argv) {
             pushStr(code.arg.half.offset < 0 ? ">" : "<");
     };
 
-    for (auto const &code : codes) {
+    auto set = [&pushStr, &winMov](Instruction const &code) {
+        if (code.arg.full == 0) {
+            pushStr("[-]");
+        } else {
+            winMov(code, [&pushStr](auto const &code) {
+                pushStr("[-]");
+                for (int i = 0; i < abs(code.arg.half.arg); ++i)
+                    pushStr(code.arg.half.arg > 0 ? "+" : "-");
+            });
+        }
+    };
+
+    for (auto const &code: codes) {
         switch (code.fn) {
             case Instruction::VMOpcode::invalid:
                 break;
@@ -96,15 +108,7 @@ int main(int argc, char **argv) {
                 pushStr("]");
                 break;
             case Instruction::VMOpcode::set:
-                if (code.arg.full == 0) {
-                    pushStr("[-]");
-                } else {
-                    winMov(code, [&pushStr](auto const &code) {
-                        pushStr("[-]");
-                        for (int i = 0; i < abs(code.arg.half.arg); ++i)
-                            pushStr(code.arg.half.arg > 0 ? "+" : "-");
-                    });
-                }
+                set(code);
                 break;
             case Instruction::VMOpcode::copy:
                 throw std::runtime_error("copy not implemented");
@@ -123,6 +127,12 @@ int main(int argc, char **argv) {
             case Instruction::VMOpcode::mov:
                 throw std::runtime_error("mov not implemented");
                 break;
+            case Instruction::VMOpcode::memset: {
+                for (int i = 0; i < code.arg.half.arg2; ++i) {
+                    set(code);
+                }
+                break;
+            }
         }
     }
 }
