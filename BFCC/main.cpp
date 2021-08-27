@@ -82,8 +82,17 @@ int main(int argc, char **argv) {
             ccode << " ";
     };
 
+    auto incWin = [&ccode](Instruction const &code, bool newLine = true) {
+        if (code.arg.full > 0)
+            ccode << "i += " << code.arg.full;
+        else
+            ccode << "i -= " << -code.arg.full;
+        if (newLine)
+            ccode << ";" << std::endl;
+    };
+
     for (auto it = codes.begin(); it != codes.end(); ++it) {
-        auto const &code = *it;
+        auto &code = *it;
         if (code.fn == Instruction::VMOpcode::loopBegin)
             insertTabs(tablvl++);
         else if (code.fn == Instruction::VMOpcode::loopEnd)
@@ -91,6 +100,8 @@ int main(int argc, char **argv) {
         else
             insertTabs(tablvl);
 
+        auto prevCode = *it;
+beginSwitch:
         switch (code.fn) {
             case Instruction::VMOpcode::inc: {
                 pushOffset(code);
@@ -100,12 +111,16 @@ int main(int argc, char **argv) {
                     ccode << "-= " << (int) -code.arg.half.arg << ";" << std::endl;
                 break;
             }
-            case Instruction::VMOpcode::incWin:
-                if (code.arg.full > 0)
-                    ccode << "i += " << code.arg.full << ";" << std::endl;
-                else
-                    ccode << "i -= " << -code.arg.full << ";" << std::endl;
+            case Instruction::VMOpcode::incWin: {
+                auto next = std::next(it);
+                if (next->fn == Instruction::VMOpcode::loopBegin) {
+                    it = next;
+                    code = *it;
+                    goto beginSwitch;
+                }
+                incWin(code);
                 break;
+            }
             case Instruction::VMOpcode::outChar:
                 if (code.arg.half.arg == -1)
                     ccode << "putchar(arr[i]);" << std::endl;
@@ -129,24 +144,33 @@ int main(int argc, char **argv) {
                 }
                 break;
             case Instruction::VMOpcode::loopBegin: {
-                auto next = (it + 1);
+                auto next = std::next(it);
+
+                ccode << "for (";
+                if (prevCode.fn == Instruction::VMOpcode::incWin) {
+                    incWin(prevCode, false);
+                    tablvl++;
+                }
+
+                ccode << "; arr[i];";
+
                 // optimizes "while(arr[i]) {i += n;}" construction to one line
                 if (next->fn == Instruction::VMOpcode::incWin) {
-                    auto next2 = (it + 2);
+                    auto next2 = std::next(next);
                     if (next2->fn == Instruction::VMOpcode::loopEnd) {
-                        ccode << "for (; arr[i]; ";
                         if (next->arg.full > 0)
-                            ccode << "i += " << next->arg.full;
+                            ccode << " i += " << next->arg.full;
                         else
-                            ccode << "i -= " << -next->arg.full;
+                            ccode << " i -= " << -next->arg.full;
                         ccode << ");" << std::endl;
-                        it += 2;
+                        it = next2;
                         tablvl--;
                         break;
                     }
                 }
-                // todo: optimize while (arr[i]) { /*code*/ i += n;} to the for-loop
-                ccode << "while (arr[i]) {" << std::endl;
+                // todo: optimize for (;arr[i];) { /*code*/; i += n; } to the for(;arr[i]; i += n) { /*code*/ }
+                // todo: use while loop if window (i) not changed inside loop
+                ccode << ") {" << std::endl;
             }
                 break;
             case Instruction::VMOpcode::loopEnd:
@@ -168,8 +192,10 @@ int main(int argc, char **argv) {
                 if (code.fn == Instruction::VMOpcode::copy)
                     ccode << "+";
                 ccode << "= arr[i";
-                if (code.arg.half.arg != 0)
+                if (code.arg.half.arg > 0)
                     ccode << " + " << (int) code.arg.half.arg;
+                else if (code.arg.half.arg < 0)
+                    ccode << " - " << (int) -code.arg.half.arg;
                 ccode << "];" << std::endl;
                 break;
             case Instruction::VMOpcode::mul: {
